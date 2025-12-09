@@ -1,0 +1,25 @@
+"from hour";"to hour";"session type";"room name"
+"10:35";"11:20";Conference;Room 2 
+"10:35";"11:20";Conference;Room 8
+"10:35";"11:20";Conference;Room 7 
+"10:35";"11:20";Conference;Room 3
+"11:30";"12:15";Conference;Room 3
+"11:30";"12:15";Conference;Room 8
+"11:30";"12:15";Conference;Room 7
+"11:30";"12:15";Conference;Room 2
+"13:25";"14:10";Conference;Room 8
+"13:25";"14:10";Conference;Room 7
+"13:25";"14:10";Conference;Room 3
+"13:25";"14:10";Conference;Room 2
+"14:20";"15:05";Conference;Room 7
+"14:20";"15:05";Conference;Room 8
+"14:20";"15:05";Conference;Room 2
+"14:20";"15:05";Conference;Room 3
+"15:25";"16:10";Conference;Room 3
+"15:25";"16:10";Conference;Room 2
+"15:25";"16:10";Conference;Room 8
+"15:25";"16:10";Conference;Room 7
+"16:20";"17:05";Conference;Room 3
+"16:20";"17:05";Conference;Room 2
+"16:20";"17:05";Conference;Room 8
+"16:20";"17:05";Conference;Room 7 
