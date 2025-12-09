@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains two implementations of a conference scheduler skill—tools that optimize conference schedules using constraint satisfaction:
+This repository contains three implementations of a conference scheduler skill—tools that optimize conference schedules using constraint satisfaction:
 
 1. **conference-scheduler-timefold-skill/** - Java/TimeFold implementation
 2. **conference-scheduler-google-skill/** - Python/OR-Tools implementation
+3. **conference-scheduler-solverforge-skill/** - Python/SolverForge implementation (TimeFold-compatible)
 
-Both solve the same problem: given talks (with speakers, tracks, levels) and available time slots/rooms, produce an optimal schedule respecting hard constraints (no conflicts) and soft constraints (educational flow).
+All three solve the same problem: given talks (with speakers, tracks, levels) and available time slots/rooms, produce an optimal schedule respecting hard constraints (no conflicts) and soft constraints (educational flow).
 
 ## Build & Run Commands
 
@@ -33,9 +34,19 @@ mvn clean package
 java -jar target/conference-scheduler-1.0-SNAPSHOT.jar schedule.csv talks.csv output.csv --time-limit=30s
 ```
 
+### Python (SolverForge) Implementation
+
+```bash
+# Install dependency (requires Python 3.10-3.12, JDK 17+)
+pip install solverforge_legacy --break-system-packages
+
+# Run scheduler
+python conference-scheduler-solverforge-skill/assets/scheduler.py schedule.csv talks.csv output.csv --time-limit 30
+```
+
 ## Input Format
 
-Both implementations expect semicolon-delimited CSVs:
+All implementations expect semicolon-delimited CSVs:
 
 **Schedule CSV** (timeslots): `"day";"from hour";"to hour";"session type";"room name"` (day column optional for single-day)
 
@@ -53,19 +64,20 @@ Both implementations expect semicolon-delimited CSVs:
 
 **Soft Constraints** (optimization):
 - Educational flow: BEGINNER → INTERMEDIATE → ADVANCED within track
-- Track room consistency (TimeFold only): keep track in same room
+- Track room consistency (TimeFold and SolverForge): keep track in same room
 - AI-computed flow order: respect LLM-determined talk sequence
 
 ### Key Files
 
 - `conference-scheduler-google-skill/assets/scheduler.py` - Complete Python solver (dataclasses, CSV parsing, CP-SAT model, output generation)
 - `conference-scheduler-timefold-skill/assets/timefold-project.zip` - Java project template with TimeFold solver
+- `conference-scheduler-solverforge-skill/assets/scheduler.py` - Python solver using SolverForge (TimeFold-compatible, no Java project setup)
 - `*/references/constraints.md` - Constraint customization examples
 - `*/references/ai-flow-analysis.md` - LLM integration for optimal talk ordering
 
 ### AI Flow Enhancement
 
-Both implementations support AI-enhanced educational flow:
+All implementations support AI-enhanced educational flow:
 1. Group talks by track
 2. Send summaries to Claude with prompt requesting optimal order
 3. Parse comma-separated talk IDs response
