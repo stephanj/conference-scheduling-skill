@@ -2,6 +2,16 @@
 
 Generate optimized conference schedules using constraint satisfaction solvers. These skills enable Claude Code to automatically schedule talks into time slots and rooms while respecting speaker availability, avoiding conflicts, and optimizing for educational flow.
 
+## Example : Create the perfect schedule
+
+<img width="1579" height="973" alt="Screenshot 2025-12-09 at 10 48 53" src="https://github.com/user-attachments/assets/f4f0e941-dc14-4e9f-ac71-dd0c096437af" />
+
+<img width="1579" height="627" alt="Screenshot 2025-12-09 at 10 49 12" src="https://github.com/user-attachments/assets/7b148168-febe-49a0-95d0-83e953819b42" />
+
+<img width="1579" height="678" alt="Screenshot 2025-12-09 at 10 49 26" src="https://github.com/user-attachments/assets/d2f02a41-f37a-451e-b6f0-9b7fae25a1ac" />
+
+See example directory for the used input files and the generated output schedule.
+
 ## Available Skills
 
 | Skill | Solver | Language | Best For |
