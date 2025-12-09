@@ -81,24 +81,52 @@ The skill generates:
 - **Track room consistency**: Keeps same track in same room when possible
 - **AI-computed order**: Respects optimal talk sequence based on content analysis
 
-## Installation
+## Installing the Skills
 
-### Python/OR-Tools Skill
+Claude Code skills are installed by copying the skill directory to your Claude Code configuration.
+
+### 1. Locate Your Claude Code Skills Directory
+
+Skills are stored in `~/.claude/skills/` (create if it doesn't exist):
+
+```bash
+mkdir -p ~/.claude/skills
+```
+
+### 2. Copy the Skill(s)
+
+**For the Python/OR-Tools skill:**
+
+```bash
+cp -r conference-scheduler-google-skill ~/.claude/skills/
+```
+
+**For the Java/TimeFold skill:**
+
+```bash
+cp -r conference-scheduler-timefold-skill ~/.claude/skills/
+```
+
+### 3. Install Dependencies
+
+**Python/OR-Tools skill:**
 
 ```bash
 pip install ortools --break-system-packages
 ```
 
-### Java/TimeFold Skill
-
-Requires Java 17+ and Maven:
+**Java/TimeFold skill** (requires Java 17+ and Maven):
 
 ```bash
-cd conference-scheduler-timefold-skill
+cd ~/.claude/skills/conference-scheduler-timefold-skill
 unzip assets/timefold-project.zip
 cd timefold-conference-scheduler
 mvn clean package
 ```
+
+### 4. Verify Installation
+
+Start a new Claude Code session. The skill should appear when you type `/` to see available commands, or Claude will automatically use it when you ask to schedule a conference.
 
 ## Recommended Time Limits
 
