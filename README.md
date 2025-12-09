@@ -18,8 +18,9 @@ See example directory for the used input files and the generated output schedule
 |-------|--------|----------|----------|
 | `conference-scheduler-timefold-skill` | TimeFold (OptaPlanner) | Java | Advanced constraints, large conferences |
 | `conference-scheduler-google-skill` | OR-Tools CP-SAT | Python | Quick setup, no JVM required |
+| `conference-scheduler-solverforge-skill` | [SolverForge](https://github.com/solverforge) | Python | Timefold-compatible, Python-native |
 
-Both skills produce identical output formats and handle the same input data.
+All skills produce identical output formats and handle the same input data.
 
 ## Example
 
@@ -127,6 +128,12 @@ cp -r conference-scheduler-google-skill ~/.claude/skills/
 cp -r conference-scheduler-timefold-skill ~/.claude/skills/
 ```
 
+**For the Python/SolverForge skill:**
+
+```bash
+cp -r conference-scheduler-solverforge-skill ~/.claude/skills/
+```
+
 ### 3. Install Dependencies
 
 **Python/OR-Tools skill:**
@@ -142,6 +149,12 @@ cd ~/.claude/skills/conference-scheduler-timefold-skill
 unzip assets/timefold-project.zip
 cd timefold-conference-scheduler
 mvn clean package
+```
+
+**Python/SolverForge skill** (requires Python 3.10-3.12 and JDK 17+):
+
+```bash
+pip install solverforge_legacy --break-system-packages
 ```
 
 ### 4. Verify Installation
@@ -183,6 +196,7 @@ Ensure availability values match day names in schedule CSV exactly (e.g., "Wedne
 See the constraints documentation for examples of adding custom constraints:
 - [Python/OR-Tools constraints](conference-scheduler-google-skill/references/constraints.md)
 - [Java/TimeFold constraints](conference-scheduler-timefold-skill/references/constraints.md)
+- [Python/SolverForge constraints](conference-scheduler-solverforge-skill/references/constraints.md)
 
 Examples include:
 - Keynotes in main room
@@ -195,3 +209,4 @@ Examples include:
 For optimal educational flow beyond simple level ordering, the skills support AI analysis of talk summaries:
 - [Python/OR-Tools AI integration](conference-scheduler-google-skill/references/ai-flow-analysis.md)
 - [Java/TimeFold AI integration](conference-scheduler-timefold-skill/references/ai-flow-analysis.md)
+- [Python/SolverForge AI integration](conference-scheduler-solverforge-skill/references/ai-flow-analysis.md)

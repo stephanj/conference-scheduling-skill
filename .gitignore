@@ -1,0 +1,21 @@
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Test outputs
+test_output*.csv
+test_output*.md
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
