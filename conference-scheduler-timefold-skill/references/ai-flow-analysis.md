@@ -1,10 +1,10 @@
 # AI-Powered Educational Flow Analysis
 
-This guide explains how to use AI/LLM to analyze talk summaries and determine optimal educational flow.
+This guide explains how to use AI/LLM to analyze talk summaries and determine optimal educational flow ordering within tracks.
 
 ## Overview
 
-The educational flow constraint ensures talks within a track are ordered for optimal learning. While audience level (beginner → advanced) provides a baseline, analyzing talk summaries with AI enables more nuanced ordering.
+The educational flow constraint ensures talks within a track are ordered for optimal learning. While audience level (beginner → advanced) provides a baseline, analyzing talk summaries with AI enables more nuanced ordering that accounts for topic dependencies, conceptual progression, and variety.
 
 ## Approach
 
@@ -51,50 +51,84 @@ List<String> orderedIds = Arrays.asList(aiResponse.split(","))
     .toList();
 ```
 
-### 4. Apply to Solver
+### 4. Apply to Solver via `CsvReader.applyFlowOrder()`
 
 ```java
+CsvReader reader = new CsvReader();
+Schedule problem = reader.readProblem(schedulePath, talksPath);
+
+// Build flow orders map: track name → ordered list of talk IDs
 Map<String, List<String>> flowOrders = new HashMap<>();
 flowOrders.put("Development Practices", List.of("4367", "5259", "1411", "4914"));
 flowOrders.put("Java", List.of("4945", "4931", "4929", "5456", "5261"));
-// ... more tracks
+// ... add more tracks as needed
 
-CsvDataReader reader = new CsvDataReader();
-reader.applyFlowOrder(talks, flowOrders);
+// Apply before solving
+reader.applyFlowOrder(problem.getTalks(), flowOrders);
+
+// Then solve as normal
 ```
 
-## Integration with Claude
+> **Note**: `applyFlowOrder()` is defined in `CsvReader` and sets the `flowOrder` field on each `Talk`.
+> Talks not present in `flowOrders` retain their default order (derived from audience level).
 
-### Using Claude API
+## Integration with Claude API
+
+### Using the Anthropic Java SDK
 
 ```java
 import com.anthropic.client.AnthropicClient;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.anthropic.models.*;
 
 public class FlowAnalyzer {
-    private final AnthropicClient client;
-    
+    private final AnthropicClient client = AnthropicOkHttpClient.fromEnv();
+
     public List<String> analyzeTrackFlow(String trackName, List<Talk> talks) {
         String prompt = buildPrompt(trackName, talks);
-        
-        var response = client.messages().create(
+
+        Message response = client.messages().create(
             MessageCreateParams.builder()
-                .model("claude-sonnet-4-20250514")
-                .maxTokens(100)
-                .addMessage(MessageParam.user(prompt))
+                .model("claude-sonnet-4-5")
+                .maxTokens(200)
+                .addUserMessage(prompt)
                 .build()
         );
-        
-        return parseResponse(response.content().get(0).text());
+
+        String text = response.content().stream()
+            .filter(b -> b.type() == ContentBlock.Type.TEXT)
+            .map(b -> b.asText().text())
+            .findFirst().orElse("");
+
+        return Arrays.stream(text.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isBlank())
+            .toList();
+    }
+
+    private String buildPrompt(String trackName, List<Talk> talks) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Analyze these conference talks and suggest the optimal order for educational flow.\n");
+        sb.append("Return ONLY a comma-separated list of talk IDs in optimal order.\n\n");
+        sb.append("Track: ").append(trackName).append("\n\nTalks:\n");
+        for (Talk t : talks) {
+            sb.append("ID: ").append(t.getId()).append("\n");
+            sb.append("Title: ").append(t.getTitle()).append("\n");
+            sb.append("Level: ").append(t.getAudienceLevel()).append("\n");
+            sb.append("Summary: ").append(t.getSummary()).append("\n\n");
+        }
+        return sb.toString();
     }
 }
 ```
 
-### Batch Processing
+### Batch Processing (All Tracks in One API Call)
 
-For efficiency, analyze all tracks in one prompt:
+For efficiency, analyze all tracks in a single prompt:
 
 ```
 Analyze these conference tracks and suggest optimal talk order for each.
+Return each track on its own line: TrackName: id1,id2,id3
 
 Track 1: Development Practices
 - 4367: BDD intro (BEGINNER)
@@ -106,38 +140,46 @@ Track 2: Java
 - 4945: Performance toolbox (BEGINNER)
 - 4931: Modern Java features (INTERMEDIATE)
 ...
+```
 
-Return as:
-Development Practices: id1,id2,id3,id4
-Java: id1,id2,id3,id4,id5
+Parse the response:
+
+```java
+Map<String, List<String>> flowOrders = new HashMap<>();
+for (String line : response.split("\n")) {
+    if (line.contains(":")) {
+        String[] parts = line.split(":", 2);
+        String track = parts[0].trim();
+        List<String> ids = Arrays.stream(parts[1].split(","))
+            .map(String::trim).filter(s -> !s.isBlank()).toList();
+        flowOrders.put(track, ids);
+    }
+}
 ```
 
 ## Example Flow Rationale
 
 For the Java track, AI might reason:
 
-1. **4945 (Performance Toolbox)** - Foundational JDK tools knowledge
-2. **4931 (Modern Java)** - New language features build on basics
-3. **4929 (Design Patterns)** - Apply modern features to patterns
-4. **5456 (Java Projects)** - Future of Java, broader perspective
-5. **5261 (Loom)** - Advanced implementation patterns
+1. **4945 (Performance Toolbox)** — Foundational JDK tools knowledge
+2. **4931 (Modern Java)** — New language features build on basics
+3. **4929 (Design Patterns)** — Apply modern features to patterns
+4. **5456 (Java Projects)** — Future of Java, broader perspective
+5. **5261 (Loom)** — Advanced concurrency deep-dive
 
-This creates a learning journey from tools → features → patterns → vision → deep-dive.
+This creates a learning journey: tools → features → patterns → vision → deep-dive.
 
 ## Caching Recommendations
 
-Cache AI-generated flow orders to avoid repeated API calls:
+Cache AI-generated flow orders to avoid repeated API calls. Regenerate only when talks are added or removed from a track.
 
-```java
-// Store as JSON
+```json
 {
-  "generatedAt": "2024-01-15T10:30:00Z",
-  "model": "claude-sonnet-4-20250514",
+  "generatedAt": "2025-03-07T10:30:00Z",
+  "model": "claude-sonnet-4-5",
   "tracks": {
     "Java": ["4945", "4931", "4929", "5456", "5261"],
     "Security": ["5298", "5268"]
   }
 }
 ```
-
-Regenerate only when talks are added/removed from a track.

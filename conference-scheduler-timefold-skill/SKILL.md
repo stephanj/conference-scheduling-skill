@@ -7,6 +7,11 @@ description: Generate optimized conference schedules using TimeFold (formerly Op
 
 Generate optimized conference schedules using TimeFold constraint solver with AI-enhanced educational flow. Supports single-day and multi-day conferences.
 
+## Prerequisites
+
+- **Java 21+** (required by TimeFold solver)
+- **Maven 3.8+** (for building the project)
+
 ## Quick Start
 
 1. Extract the template project: `unzip assets/timefold-project.zip`
@@ -50,7 +55,21 @@ Day values can be: day names (Monday, Tuesday), dates (2024-03-15), or labels (D
 3872;Full-stack development;INTERMEDIATE;Java developers...;UI & UX;;;;Simon Martinelli
 ```
 
-**Speaker Availability** formats (column 6):
+#### Talks CSV Column Mapping
+
+| Column | Header | Description |
+|--------|--------|-------------|
+| 0 | Talk ID | Unique identifier for the talk |
+| 1 | Talk Title | Title of the talk |
+| 2 | Audience Level | `BEGINNER`, `INTERMEDIATE`, or `ADVANCED` |
+| 3 | Talk Summary | Description of the talk content |
+| 4 | Track Name | Conference track (e.g. "Java", "Security") |
+| 5 | Speaker Availability days | Comma-separated day names/numbers, or empty = all days |
+| 6 | Available from | _Reserved for future use — currently ignored_ |
+| 7 | Available to | _Reserved for future use — currently ignored_ |
+| 8 | Speaker names | Comma-separated speaker names |
+
+**Speaker Availability** formats (column 5):
 - Day names: `Wednesday,Thursday`
 - Day numbers: `1,2,3`
 - Day labels: `Day 1,Day 2`
@@ -64,17 +83,19 @@ Day values can be: day names (Monday, Tuesday), dates (2024-03-15), or labels (D
 |------------|-------------|
 | Speaker conflict | Same speaker can't be in two rooms at same time |
 | Room conflict | Two talks can't be in same room at same time |
-| Track conflict | Same track can't have talks in different rooms simultaneously |
 | Speaker availability | Speaker must be available on scheduled day |
 
 ### Soft Constraints (Optimization)
 
-| Constraint | Description |
-|------------|-------------|
-| Educational flow (level) | Beginner → Intermediate → Advanced within track per day |
-| Educational flow (order) | Respect AI-computed optimal talk sequence |
-| Track room consistency | Keep same track in same room on same day |
-| Track day consistency | Keep same track on same day when possible |
+| Constraint | Weight | Description |
+|------------|--------|-------------|
+| Track parallel sessions | −3 | Prefer not to run same track in parallel. Intentionally soft — large conferences (Devoxx, etc.) commonly run parallel sessions within a track. |
+| Track day consistency | −2 | Keep same track on same day when possible |
+| Educational flow (level) | −1 per level gap | Beginner → Intermediate → Advanced within track per day |
+| Educational flow (order) | −1 per order gap | Respect AI-computed optimal talk sequence |
+| Track room consistency | −1 | Keep same track in same room on same day |
+
+> **Note:** `trackParallelSessions` was previously named `trackConflict` and was a hard constraint. It was demoted to soft because making it hard caused infeasible solutions (`hardScore < 0`) for any conference with more talks per track than available parallel rooms.
 
 ## Usage
 
@@ -86,10 +107,20 @@ mvn clean package
 java -jar target/conference-scheduler-1.0-SNAPSHOT.jar schedule.csv talks.csv output.csv --time-limit=30s
 ```
 
+### Command-Line Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `<schedule.csv>` | **Required.** Path to the schedule/timeslot CSV | `schedule.csv` |
+| `<talks.csv>` | **Required.** Path to the talks CSV | `talks.csv` |
+| `[output.csv]` | Output file path (default: `schedule_output.csv`) | `output.csv` |
+| `--time-limit=<duration>` | Solver time limit. Supports `s` (seconds), `m` (minutes), `h` (hours). Default: `30s` | `--time-limit=5m`, `--time-limit=1h` |
+| `--dry-run` | Validate input files and show capacity stats without running the solver | `--dry-run` |
+
 ### Time Limits
 
 - Small conferences (< 30 talks): 30 seconds
-- Medium conferences (30-100 talks): 2-5 minutes  
+- Medium conferences (30-100 talks): 2-5 minutes
 - Large conferences (100+ talks, multi-day): 10-30 minutes
 
 ## Output Format
@@ -139,7 +170,7 @@ For optimal educational flow within tracks, use AI to analyze talk summaries:
 
 1. Group talks by track
 2. Send summaries to LLM with prompt requesting optimal order
-3. Apply order using `CsvDataReader.applyFlowOrder()`
+3. Apply order using `CsvReader.applyFlowOrder()`
 
 See `references/ai-flow-analysis.md` for integration details.
 
@@ -147,7 +178,7 @@ See `references/ai-flow-analysis.md` for integration details.
 
 ### Adding Constraints
 
-Edit `ConferenceConstraintProvider.java`. Example keynote constraint:
+Edit `Constraints.java`. Example keynote constraint:
 
 ```java
 Constraint keynoteInMainRoom(ConstraintFactory factory) {
@@ -169,14 +200,17 @@ The schedule has constraint violations. Check for:
 - More talks than available slots
 - Speaker assigned to multiple talks in same slot
 - Speaker not available on scheduled day
-- Too many talks in same track for available parallel slots
 
 Increase time limit or review input data.
 
 ### Talks not scheduled
 
-Verify CSV parsing - check semicolon separators and quote handling.
+Verify CSV parsing - check semicolon separators and quote handling. The solver now reports the count of unscheduled talks after solving.
 
 ### Speaker availability not working
 
 Ensure the "Speaker Availability days" column values match the day names in your schedule CSV (e.g., if schedule uses "Wednesday", availability should use "Wednesday" not "Wed").
+
+### `CsvDataReader` not found
+
+The class was renamed to `CsvReader`. Update your imports from `scheduler.io.CsvDataReader` to `scheduler.io.CsvReader`. The `applyFlowOrder()` method is available on `CsvReader`.
